@@ -1,6 +1,6 @@
-# Fast API Fruit Classifier - Resnet 18 ML
+# FastAPI Fruit Classifier - ResNet 18 ML
 
-A simple ML API that classifies fresh vs rotten fruits (apples, bananas, oranges).
+A production-ready ML API that classifies fresh vs rotten fruits (apples, bananas, oranges) using a fine-tuned ResNet-18 model. The API is built with FastAPI and includes rate limiting, authentication, and comprehensive documentation.
 
 ## Setup
 
@@ -27,29 +27,127 @@ pip install -r requirements.txt
 fastapi run app/main.py --port 8080 --reload
 ```
 
+## Features
+
+- **Machine Learning**: ResNet-18 based fruit classification model
+- **Rate Limiting**: 2 requests per minute per IP for prediction endpoint
+- **Authentication**: API key-based authentication for protected endpoints
+- **Model Management**: Automatic model download from Weights & Biases
+- **Docker Support**: Containerized deployment ready
+- **Interactive Documentation**: Auto-generated Swagger UI at `/docs`
+
 ## API Endpoints
 
-- `GET /` - Welcome message
-- `GET /health` - Health check
-- `GET /categories` - List fruit categories (requires API key)
-- `POST /predict` - Upload image for ML fruit classification class
+### Public Endpoints
+
+- `GET /` - Smart redirect to `/docs` for browsers, JSON response for API clients
+- `GET /welcome` - API information and available endpoints
+- `GET /health` - Health check with system status
+- `POST /predict` - Upload image for ML fruit classification (rate limited: 2/minute)
+
+### Protected Endpoints (Require API Key)
+
+- `GET /categories` - List all available fruit categories
 
 ## Authentication
 
-Include API key in header:
+Protected endpoints require an API key in the `x-api-key` header. Configure your API keys in the `.env` file.
 
-```bash
-curl -H "x-api-key: your-key" http://localhost:8000/categories
+## Model Information
+
+The API uses a fine-tuned ResNet-18 model trained to classify:
+
+### Categories
+
+- **Fresh Fruits**: `freshapple`, `freshbanana`, `freshorange`
+- **Rotten Fruits**: `rottenapple`, `rottenbanana`, `rottenorange`
+
+### Model Architecture
+
+- Base: ResNet-18 (ImageNet pre-trained)
+- Custom classifier: 512 → 512 → 6 classes
+- Input size: 224x224 RGB images
+- Preprocessing: Resize(256) → CenterCrop(224) → Normalize(ImageNet stats)
+
+### Training Data & Fine-tuning
+
+The model was fine-tuned using the [Apples, Bananas, and Oranges dataset](https://www.kaggle.com/datasets/sriramr/apples-bananas-oranges) from Kaggle. This dataset contains images of fresh and rotten fruits across three categories:
+
+- **Dataset**: Kaggle - Apples, Bananas, and Oranges
+- **Classes**: 6 total (fresh/rotten × apple/banana/orange)
+- **Training approach**: Transfer learning from ImageNet-pretrained ResNet-18
+- **Custom head**: Added fully connected layers (512 → ReLU → 512 → 6) for fruit classification
+- **Model storage**: Trained weights stored and versioned in Weights & Biases
+
+### Response Format
+
+```json
+{
+	"category": "freshapple",
+	"confidence": 0.95
+}
 ```
 
-## Categories
+## Docker Deployment
 
-- Fresh/Rotten: Apple, Banana, Orange
+### Build Image
 
-## Docker Build and run
+```bash
+docker build -t fruit-classifier-api .
+```
 
-build
-`docker build -t myfastapiapp . `
+### Run Container
 
-run build
-`docker run -p 8080:8080 myfastapiapp`
+```bash
+docker run -p 8080:8080 --env-file .env fruit-classifier-api
+```
+
+### Environment Variables in Docker
+
+Make sure your `.env` file contains all required variables before running the container.
+
+## Development
+
+### Project Structure
+
+```
+app/
+├── __init__.py
+├── main.py         # FastAPI application and endpoints
+└── model.py        # ML model loading and preprocessing
+
+requirements.txt    # Python dependencies
+Dockerfile         # Container configuration
+.env              # Environment variables (not tracked)
+```
+
+### Rate Limiting
+
+- Prediction endpoint: 2 requests per minute per IP address
+- Based on client IP address
+- Returns HTTP 429 when exceeded
+
+## API Documentation
+
+Once running, visit:
+
+- **Swagger UI**: http://localhost:8000/docs
+
+## Troubleshooting
+
+### Common Issues
+
+1. **WANDB_API_KEY not found**: Ensure all required environment variables are set in `.env`
+2. **Model download fails**: Check WANDB credentials and model path configuration
+3. **Rate limit exceeded**: Wait before making additional requests to `/predict`
+4. **Invalid API key**: Verify your API key is included in the `API_KEYS` environment variable
+
+### Health Check Response
+
+```json
+{
+	"status": "healthy",
+	"api_keys_loaded": true,
+	"categories_count": 6
+}
+```

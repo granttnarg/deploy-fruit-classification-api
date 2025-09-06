@@ -115,6 +115,7 @@ async def predict(
 
 def load_api_keys():
     """Load API keys from environment variables"""
+    keys = set()
     api_keys_str = os.getenv("API_KEYS", "")
     if api_keys_str:
         return set(key.strip() for key in api_keys_str.split(",") if key.strip())
