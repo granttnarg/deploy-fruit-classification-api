@@ -14,10 +14,7 @@ from torchvision.transforms import v2 as transforms
 from torchvision.models import ResNet
 from PIL import Image
 import torch.nn.functional as F
-from app.welcome import CATEGORIES
 from dotenv import load_dotenv
-
-
 from .model import load_model, load_transforms
 
 # This is data model that describes the ouput of the API
@@ -33,6 +30,9 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc"
 )
+
+CATEGORIES = ["freshapple", "freshbanana", "freshorange",
+              "rottenapple", "rottenbanana", "rottenorange"]
 
 # Add basic rate limiter
 limiter = Limiter(key_func=get_remote_address)
