@@ -1,9 +1,13 @@
 import os
 import wandb
+import torch
 from loadotenv import load_env
+from torchvision.models import resnet18, ResNet
+from torch import nn
+from pathlib import Path
 
-MODELS_DIR = 'models'
-MODEL_FILE_NAME = 'best_model.pth'
+MODELS_DIR = '../models'
+MODEL_FILENAME = 'best_model.pth'
 
 os.makedirs(MODELS_DIR, exist_ok=True)
 wandb_api_key = os.environ.get("WANDB_API_KEY")
@@ -11,6 +15,7 @@ wandb_api_key = os.environ.get("WANDB_API_KEY")
 load_env()
 
 def download_artifact():
+    """Download the weights from our model from weights and biases """
     assert 'WANDB_API_KEY' in os.environ, "WANDB_API_KEY not found in environment Variables"
     wandb.login(key=wandb_api_key)
     api = wandb.Api()
@@ -31,8 +36,40 @@ def download_artifact():
     artifact = wandb.Api().artifact(artifact_path, type='model')
     artifact.download(root=MODELS_DIR)
 
-download_artifact()
+def get_raw_model() -> ResNet:
 
+    """Get tthe architexture ofr the model (random weights) - this must much the architexture during training"""
+    # Uses random weights to initialize 
+    architecture = resnet18(weights=None)
 
+    # Change the model architecture to the one that we are actually using
+    architecture.fc = nn.Sequential(
+        nn.Linear(512, 512),
+        nn.ReLU(),
+        nn.Linear(512, 6)
+    )
 
+    return architecture
+
+def load_model() -> ResNet:
+    """Loads the model  with its wandb trained weights weights"""
+    # download weights
+    download_artifact()
+    model = get_raw_model()
+    # Get the trained model weights
+    model_state_dict_path = Path(MODELS_DIR) / MODEL_FILENAME
+
+    # this loads the weights from the file into a state_dictionary in memory
+    model_state_dict = torch.load(model_state_dict_path, map_location='cpu')
+
+    # This merges the weights into the model arch.
+    model.load_state_dict(model_state_dict, strict=True)
+
+    # Turn off BatchNorm and Dropout, uses the stats from training instead of stats from the inference set.
+    model.eval()
+    print('model eval mode')
+    return model
+    
+resnet = load_model()
+print(resnet)
 
