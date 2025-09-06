@@ -23,7 +23,7 @@ API_KEYS=key1,key2,key3
 3. Run the app:
 
 ```bash
-fastapi run welcome.py
+fastapi run app/main.py --port 8080 --reload
 ```
 
 ## API Endpoints

@@ -2,7 +2,8 @@ import os
 import wandb
 import torch
 from loadotenv import load_env
-from torchvision.models import resnet18, ResNet
+from torchvision.models import resnet18, ResNet, ResNet18_Weights
+from torchvision.transforms import v2 as transforms
 from torch import nn
 from pathlib import Path
 
@@ -67,9 +68,23 @@ def load_model() -> ResNet:
 
     # Turn off BatchNorm and Dropout, uses the stats from training instead of stats from the inference set.
     model.eval()
-    print('model eval mode')
+    print('Model loaded and set to Eval Mode.')
     return model
-    
-resnet = load_model()
-print(resnet)
 
+def load_transforms() -> transforms.Compose:
+    weights = ResNet18_Weights.IMAGENET1K_V1
+    # We could use this as as transform, but lets define it below instead.
+    transform = weights.transforms()
+    # Here we can see the transforms from the original ImageNet Training, however becareful as they are not printed in the order they need to be run in.
+    print(transform)
+
+    # Lets manually redefine the transforms we need
+    return transforms.Compose([
+        transforms.Resize(256),
+        transforms.CenterCrop(224),
+        transforms.ToImage(),
+        transforms.ToDtype(torch.float32, scale=True),
+        transforms.Normalize([0.485, 0.456, 0.406],
+                             [0.229, 0.224, 0.225])
+    ])
+load_transforms()
