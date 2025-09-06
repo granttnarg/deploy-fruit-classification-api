@@ -39,7 +39,7 @@ limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# Debug message, to check that app is running 
+# Debug message, to check that app is running
 
 @app.get(
     "/",
@@ -102,7 +102,7 @@ async def predict(
 
     # Here we add a batch dimension of 1
     image = transforms(image).reshape(1,3, 224, 224)
-    
+
     model.eval() # We turn off dropout and uses batch stats from training
 
     # This is inference mode, we don't need gradient tracking

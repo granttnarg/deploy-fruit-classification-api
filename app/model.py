@@ -1,7 +1,6 @@
 import os
 import wandb
 import torch
-from loadotenv import load_env
 from torchvision.models import resnet18, ResNet, ResNet18_Weights
 from torchvision.transforms import v2 as transforms
 from torch import nn
@@ -13,7 +12,9 @@ MODEL_FILENAME = 'best_model.pth'
 os.makedirs(MODELS_DIR, exist_ok=True)
 wandb_api_key = os.environ.get("WANDB_API_KEY")
 
-load_env()
+if os.getenv("ENVIRONMENT") == "development":
+    from dotenv import load_dotenv
+    load_dotenv()
 
 def download_artifact():
     """Download the weights from our model from weights and biases """
@@ -40,7 +41,7 @@ def download_artifact():
 def get_raw_model() -> ResNet:
 
     """Get tthe architexture ofr the model (random weights) - this must much the architexture during training"""
-    # Uses random weights to initialize 
+    # Uses random weights to initialize
     architecture = resnet18(weights=None)
 
     # Change the model architecture to the one that we are actually using
