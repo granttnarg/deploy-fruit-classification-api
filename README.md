@@ -5,11 +5,13 @@ A simple ML API that classifies fresh vs rotten fruits (apples, bananas, oranges
 ## Setup
 
 1. Install dependencies:
+
 ```bash
 pip install -r requirements.txt
 ```
 
 2. Create `.env` file:
+
 ```env
 WANDB_API_KEY=your-wandb-api-key
 WANDB_ORG=your-org
@@ -19,8 +21,9 @@ API_KEYS=key1,key2,key3
 ```
 
 3. Run the app:
+
 ```bash
-uvicorn app.main:app --reload
+fastapi run welcome.py
 ```
 
 ## API Endpoints
@@ -32,6 +35,7 @@ uvicorn app.main:app --reload
 ## Authentication
 
 Include API key in header:
+
 ```bash
 curl -H "x-api-key: your-key" http://localhost:8000/categories
 ```
