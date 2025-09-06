@@ -6,6 +6,9 @@ import os
 from pydantic import BaseModel
 
 from fastapi import FastAPI, HTTPException, Depends, Header, Request, File, UploadFile
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from fastapi.responses import RedirectResponse
 from torchvision.transforms import v2 as transforms
 from torchvision.models import ResNet
@@ -30,6 +33,11 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc"
 )
+
+# Add basic rate limiter
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Debug message, to check that app is running 
 
@@ -77,9 +85,12 @@ def welcome():
     }
 
 @app.post('/predict', response_model=Result)
+@limiter.limit("2/minute") 
 async def predict(
+        request: Request,
         input_image: UploadFile = File(...),
         model: ResNet = Depends(load_model),
+
         transforms: transforms.Compose = Depends(load_transforms)
 ) -> Result:
     image = Image.open(io.BytesIO(await input_image.read()))
