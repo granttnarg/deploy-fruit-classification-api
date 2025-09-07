@@ -3,6 +3,7 @@ from fastapi.testclient import TestClient
 from unittest.mock import patch
 from ..main import app
 import pytest
+import torch
 from unittest.mock import patch, MagicMock
 
 # Create test client
@@ -11,11 +12,13 @@ client = TestClient(app)
 
 @pytest.fixture(autouse=True)
 def mock_wandb():
-    with patch("wandb.login") as mock_login, patch("wandb.Api") as mock_api, patch(
-        "app.model.download_artifact"
-    ) as mock_download:  # Mock the entire function
+    with patch("wandb.login") as mock_login, \
+         patch("wandb.Api") as mock_api, \
+         patch("app.model.download_artifact") as mock_download, \
+         patch("app.model.load_model") as mock_load_model, \
+         patch("app.model.load_transforms") as mock_load_transforms:
 
-        mock_download.return_value = None  # or whatever it should return
+        mock_download.return_value = None
 
         # Make Api() return a mock object with artifact method
         mock_api_instance = MagicMock()
@@ -26,8 +29,20 @@ def mock_wandb():
         mock_artifact.download.return_value = "path/to/fake/model"
         mock_api_instance.artifact.return_value = mock_artifact
 
-        yield
+        # Mock the model
+        mock_model = MagicMock()
+        mock_model.eval.return_value = None
+        # Return tensor that makes predictions predictable
+        mock_output = torch.tensor([[0.1, 0.9, 0.05, 0.2, 0.3, 0.15]])  # 6 categories
+        mock_model.return_value = mock_output
+        mock_load_model.return_value = mock_model
 
+        # Mock the transforms
+        mock_transform = MagicMock()
+        mock_transform.return_value = torch.randn(3, 224, 224)  # Fake transformed image
+        mock_load_transforms.return_value = mock_transform
+
+        yield
 
 def test_welcome_endpoint():
     """Test /welcome endpoint returns expected structure"""
