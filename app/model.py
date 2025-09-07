@@ -5,6 +5,7 @@ from torchvision.models import resnet18, ResNet, ResNet18_Weights
 from torchvision.transforms import v2 as transforms
 from torch import nn
 from pathlib import Path
+from .cache import ml_models
 
 MODELS_DIR = "../models"
 MODEL_FILENAME = "best_model.pth"
@@ -89,4 +90,16 @@ def load_transforms() -> transforms.Compose:
     )
 
 
-load_transforms()
+# Load Model & Transforms from Cache if available
+def get_model() -> ResNet:
+    if "classifier" not in ml_models:
+        print("Model not in cache, loading now...")
+        ml_models["classifier"] = load_model()
+    return ml_models["classifier"]
+
+
+def get_transforms() -> transforms.Compose:
+    if "transforms" not in ml_models:
+        print("Transforms not in cache, loading now...")
+        ml_models["transforms"] = load_transforms()
+    return ml_models["transforms"]

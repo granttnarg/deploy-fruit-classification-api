@@ -1,8 +1,6 @@
 import torch
 import io
 import os
-
-# For type hinting
 from pydantic import BaseModel
 
 from fastapi import FastAPI, HTTPException, Depends, Header, Request, File, UploadFile
@@ -15,11 +13,14 @@ from torchvision.models import ResNet
 from PIL import Image
 import torch.nn.functional as F
 from dotenv import load_dotenv
-from .model import load_model, load_transforms
-import logging
 import datetime
 from dotenv import load_dotenv
 from app.logger import log_prediction
+from .cache import ml_models
+
+from contextlib import asynccontextmanager
+
+from .model import get_model, get_transforms, load_model, load_transforms
 
 
 # This is data model that describes the ouput of the API
@@ -29,6 +30,24 @@ class Result(BaseModel):
     inference_time_seconds: float
 
 
+# Setup caching for our model
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Load model and transforsm on startup
+    try:
+        ml_models["classifier"] = load_model()
+        ml_models["transforms"] = load_transforms()
+        print("Models and Transforms loaded successfully")
+    except Exception as e:
+        print(f"Error loading models: {e}")
+        # You might want to exit here if models are critical
+        raise
+    yield
+    # Clean up on shutdown
+    print("Shutting down, clearing models...")
+    ml_models.clear()
+
+
 # Create FastAPI instance
 app = FastAPI(
     title="Fruit Classifier API",
@@ -36,6 +55,7 @@ app = FastAPI(
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
 # Load env file in development only
@@ -115,8 +135,8 @@ def welcome():
 async def predict(
     request: Request,
     input_image: UploadFile = File(...),
-    model: ResNet = Depends(load_model),
-    transforms: transforms.Compose = Depends(load_transforms),
+    model: ResNet = Depends(get_model),
+    transforms: transforms.Compose = Depends(get_transforms),
 ) -> Result:
     image = Image.open(io.BytesIO(await input_image.read()))
 

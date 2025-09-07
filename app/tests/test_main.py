@@ -35,6 +35,10 @@ def mock_wandb():
     ), patch(
         "app.model.load_transforms", return_value=mock_load_transforms()
     ), patch(
+        "app.model.get_model", return_value=mock_load_model()
+    ), patch(
+        "app.model.get_transforms", return_value=mock_load_transforms()
+    ), patch(
         "torch.load", return_value={}
     ) as mock_torch_load, patch(
         "app.model.get_raw_model", return_value=mock_load_model()

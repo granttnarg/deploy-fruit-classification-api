@@ -2,7 +2,7 @@ import torch
 import os
 from torchvision.models import ResNet
 from torchvision.transforms import v2 as transforms
-from ..model import get_raw_model, load_transforms
+from ..model import get_raw_model, load_transforms, get_model, get_transforms
 
 import pytest
 from unittest.mock import patch, MagicMock
@@ -12,7 +12,9 @@ from unittest.mock import patch, MagicMock
 def mock_wandb():
     with patch("wandb.login") as mock_login, patch("wandb.Api") as mock_api, patch(
         "app.model.download_artifact"
-    ) as mock_download:  # Mock the entire function
+    ) as mock_download, patch(
+        "torch.load", return_value={}  # Mock torch.load to prevent file loading
+    ):
 
         mock_download.return_value = None  # or whatever it should return
 
