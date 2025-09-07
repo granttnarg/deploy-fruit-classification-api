@@ -17,7 +17,9 @@ def setup_prediction_logging(log_file: str = "logs/predictions.log"):
     prediction_logger.setLevel(logging.INFO)
     prediction_logger.handlers.clear()
 
-    is_cloud_run = os.getenv("K_SERVICE") is not None  # Turn of file logging for Cloud deployment, simple format for Google Cloud.
+    is_cloud_run = (
+        os.getenv("K_SERVICE") is not None
+    )  # Turn of file logging for Cloud deployment, simple format for Google Cloud.
 
     if is_cloud_run:
         # Cloud Run: stdout only with simple format for Cloud Logging
