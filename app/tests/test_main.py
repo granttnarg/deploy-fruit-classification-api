@@ -12,11 +12,11 @@ client = TestClient(app)
 
 @pytest.fixture(autouse=True)
 def mock_wandb():
-    with patch("wandb.login") as mock_login, \
-         patch("wandb.Api") as mock_api, \
-         patch("app.model.download_artifact") as mock_download, \
-         patch("app.model.load_model") as mock_load_model, \
-         patch("app.model.load_transforms") as mock_load_transforms:
+    with patch("wandb.login") as mock_login, patch("wandb.Api") as mock_api, patch(
+        "app.model.download_artifact"
+    ) as mock_download, patch("app.model.load_model") as mock_load_model, patch(
+        "app.model.load_transforms"
+    ) as mock_load_transforms:
 
         mock_download.return_value = None
 
@@ -43,6 +43,7 @@ def mock_wandb():
         mock_load_transforms.return_value = mock_transform
 
         yield
+
 
 def test_welcome_endpoint():
     """Test /welcome endpoint returns expected structure"""
