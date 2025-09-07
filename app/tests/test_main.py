@@ -12,11 +12,11 @@ client = TestClient(app)
 
 @pytest.fixture(autouse=True)
 def mock_wandb():
-    with patch("wandb.login") as mock_login, \
-         patch("wandb.Api") as mock_api, \
-         patch("app.model.download_artifact") as mock_download, \
-         patch("app.model.load_model") as mock_load_model, \
-         patch("app.model.load_transforms") as mock_load_transforms:
+    with patch("wandb.login") as mock_login, patch("wandb.Api") as mock_api, patch(
+        "app.model.download_artifact"
+    ) as mock_download, patch("app.model.load_model") as mock_load_model, patch(
+        "app.model.load_transforms"
+    ) as mock_load_transforms:
 
         mock_download.return_value = None
 
@@ -29,11 +29,10 @@ def mock_wandb():
         mock_artifact.download.return_value = "path/to/fake/model"
         mock_api_instance.artifact.return_value = mock_artifact
 
-        # Mock the entire load_model function to return a working mock model
+        # Mock the model
         mock_model = MagicMock()
         mock_model.eval.return_value = None
-        # Return tensor that makes predictions predictable
-        mock_output = torch.tensor([[0.1, 0.9, 0.05, 0.2, 0.3, 0.15]])  # 6 categories
+        mock_output = torch.tensor([[0.1, 0.9, 0.05, 0.2, 0.3, 0.15]])
         mock_model.return_value = mock_output
         mock_load_model.return_value = mock_model
 
