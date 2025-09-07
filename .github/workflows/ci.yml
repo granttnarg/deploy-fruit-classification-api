@@ -25,7 +25,7 @@ jobs:
 
       - name: Test
         env:
-          WANDB_API_KEY: your-api-key-here
+          WANDB_API_KEY: your-api-key-here-your-api-key-here-your-api-key-here
           API_KEYS: test
 
           WANDB_ORG: org_name
