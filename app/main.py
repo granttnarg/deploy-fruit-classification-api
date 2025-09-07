@@ -1,6 +1,8 @@
 import torch
 import io
 import os
+import datetime
+import requests
 from pydantic import BaseModel
 
 from fastapi import FastAPI, HTTPException, Depends, Header, Request, File, UploadFile
@@ -13,14 +15,11 @@ from torchvision.models import ResNet
 from PIL import Image
 import torch.nn.functional as F
 from dotenv import load_dotenv
-import datetime
-from dotenv import load_dotenv
-from app.logger import log_prediction
-from .cache import ml_models
-
 from contextlib import asynccontextmanager
 
-from .model import get_model, get_transforms, load_model, load_transforms
+from app.logger import log_prediction
+from .cache import ml_models
+from .model import get_model, get_transforms, load_model, load_transforms, load_basemodel, get_base_model
 
 
 # This is data model that describes the ouput of the API
@@ -37,7 +36,15 @@ async def lifespan(app: FastAPI):
     try:
         ml_models["classifier"] = load_model()
         ml_models["transforms"] = load_transforms()
-        print("Models and Transforms loaded successfully")
+
+        # Load baseline model (optional)
+        baseline_model = load_basemodel()
+        if baseline_model:
+            ml_models["base_model"] = baseline_model
+            print("Models, Transforms, and Baseline loaded successfully")
+        else:
+            ml_models["base_model"] = None
+            print("Models and Transforms loaded successfully (baseline disabled)")
     except Exception as e:
         print(f"Error loading models: {e}")
         # You might want to exit here if models are critical
@@ -74,12 +81,26 @@ CATEGORIES = [
     "rottenorange",
 ]
 
+def load_imagenet_classes():
+    """Load ImageNet class names from torchvision or online source"""
+    try:
+        # Option A: If you have torchvision
+        from torchvision.models import ResNet18_Weights
+        return ResNet18_Weights.IMAGENET1K_V1.meta["categories"]
+    except:
+        # Option B: Load from online JSON (fallback)
+        url = "https://raw.githubusercontent.com/anishathalye/imagenet-simple-labels/master/imagenet-simple-labels.json"
+        response = requests.get(url)
+        return response.json()
+
+# Load ImageNet categories at module level
+IMAGENET_CATEGORIES = load_imagenet_classes()
+
 # Add basic rate limiter
 limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-
-# Debug message, to check that app is running
+RATE_LIMT = os.getenv('RATELIMIT_PER_MIN', '2')
 
 
 @app.get(
@@ -130,12 +151,13 @@ def welcome():
 
 
 @app.post("/predict", response_model=Result)
-@limiter.limit("2/minute")
+@limiter.limit(f'{RATE_LIMT}/minute')
 @log_prediction()
 async def predict(
     request: Request,
     input_image: UploadFile = File(...),
     model: ResNet = Depends(get_model),
+    base_model: ResNet = Depends(get_base_model),
     transforms: transforms.Compose = Depends(get_transforms),
 ) -> Result:
     image = Image.open(io.BytesIO(await input_image.read()))
@@ -148,22 +170,38 @@ async def predict(
     # Here we add a batch dimension of 1
     image = transforms(image).reshape(1, 3, 224, 224)
 
-    model.eval()  # We turn off dropout and uses batch stats from training
+    model.eval() # We turn off dropout and uses batch stats from training
+    base_model.eval()
 
     # This is inference mode, we don't need gradient tracking
     inference_start = datetime.datetime.now()
-    with torch.inference_mode():  # The newer version of no_grad
-        outputs = model(image)
-        confidence = (
-            F.softmax(outputs, dim=1).max().item()
-        )  # dim -> batch, output_categories
-        category = CATEGORIES[outputs.argmax()]
-    inference_end = datetime.datetime.now()
 
+    with torch.inference_mode():
+        # Run inference on both models
+        outputs = model(image)
+        base_outputs = base_model(image)
+
+        # Main model results (for response)
+        confidence = F.softmax(outputs, dim=1).max().item()
+        category = CATEGORIES[outputs.argmax()]
+
+        # Base model results (for logging)
+        base_confidence = F.softmax(base_outputs, dim=1).max().item()
+        base_category = IMAGENET_CATEGORIES[base_outputs.argmax()]
+
+    inference_end = datetime.datetime.now()
     inference_time = (inference_end - inference_start).total_seconds()
 
+    # Store base model info in request state for decorator access
+    request.state.base_model_info = {
+        "category": base_category,
+        "confidence": base_confidence
+    }
+
     return Result(
-        category=category, confidence=confidence, inference_time_seconds=inference_time
+        category=category,
+        confidence=confidence,
+        inference_time_seconds=inference_time
     )
 
 
@@ -178,7 +216,6 @@ def load_api_keys():
 
 
 VALID_API_KEYS = load_api_keys()
-
 
 async def verify_api_key(x_api_key: str = Header(..., description="API Key")):
     if x_api_key not in VALID_API_KEYS:
