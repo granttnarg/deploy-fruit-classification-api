@@ -83,17 +83,19 @@ def log_prediction(
                 # Get request from kwargs to access state
                 request = None
                 for arg in args:
-                    if hasattr(arg, 'state'):
+                    if hasattr(arg, "state"):
                         request = arg
                         break
                 if not request:
                     for value in kwargs.values():
-                        if hasattr(value, 'state'):
+                        if hasattr(value, "state"):
                             request = value
                             break
 
                 # Extract base model info from request state
-                base_info = getattr(request.state, 'base_model_info', None) if request else None
+                base_info = (
+                    getattr(request.state, "base_model_info", None) if request else None
+                )
 
                 end_time = datetime.datetime.now()
                 total_time = (end_time - start_time).total_seconds()
@@ -106,7 +108,7 @@ def log_prediction(
                         "category": result.category,
                         "confidence": round(result.confidence, 4),
                     },
-                    "baseline_model": base_info if base_info else None
+                    "baseline_model": base_info if base_info else None,
                 }
 
                 # Add comparison metrics if both models available
@@ -114,7 +116,9 @@ def log_prediction(
                     prediction_log["comparison"] = {
                         "base_line_category": base_info["category"],
                         "categories_match": result.category == base_info["category"],
-                        "confidence_difference": round(abs(result.confidence - base_info["confidence"]), 4)
+                        "confidence_difference": round(
+                            abs(result.confidence - base_info["confidence"]), 4
+                        ),
                     }
 
                 # Add accurate inference timing if available

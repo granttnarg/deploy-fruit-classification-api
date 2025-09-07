@@ -11,13 +11,19 @@ import os
 import subprocess
 import sys
 
+
 def run_command(cmd, env=None, cwd=None):
     """Run command and return result"""
     print(f"Running: {cmd}")
     try:
         result = subprocess.run(
-            cmd, shell=True, capture_output=True, text=True, 
-            env=env, cwd=cwd, timeout=300
+            cmd,
+            shell=True,
+            capture_output=True,
+            text=True,
+            env=env,
+            cwd=cwd,
+            timeout=300,
         )
         print(f"Exit code: {result.returncode}")
         if result.stdout:
@@ -28,6 +34,7 @@ def run_command(cmd, env=None, cwd=None):
     except subprocess.TimeoutExpired:
         print("Command timed out!")
         return None
+
 
 def simulate_ci():
     """Simulate the exact CI environment from .github/workflows/ci.yml"""
@@ -42,17 +49,19 @@ def simulate_ci():
 
     # Set up environment exactly like GitHub Actions
     ci_env = os.environ.copy()
-    ci_env.update({
-        'WANDB_API_KEY': 'test-api-key',
-        'CI': 'true',
-        'GITHUB_ACTIONS': 'true',
-    })
+    ci_env.update(
+        {
+            "WANDB_API_KEY": "test-api-key",
+            "CI": "true",
+            "GITHUB_ACTIONS": "true",
+        }
+    )
 
     print("\n2. Installing dependencies (simulated)...")
     # In real CI, this would: pip install -r requirements.txt && pip install pytest black
-    req_path = os.path.join(project_dir, 'requirements.txt')
+    req_path = os.path.join(project_dir, "requirements.txt")
     if os.path.exists(req_path):
-        with open(req_path, 'r') as f:
+        with open(req_path, "r") as f:
             print("Requirements found:")
             print(f.read())
     else:
@@ -79,10 +88,11 @@ def simulate_ci():
 
     print("\n5. Environment comparison:")
     print("CI Environment variables:")
-    for key in ['WANDB_API_KEY', 'CI', 'GITHUB_ACTIONS']:
+    for key in ["WANDB_API_KEY", "CI", "GITHUB_ACTIONS"]:
         print(f"  {key}: {ci_env.get(key, 'NOT SET')}")
 
     return True
+
 
 if __name__ == "__main__":
     print("🔍 Local CI Simulation Tool")

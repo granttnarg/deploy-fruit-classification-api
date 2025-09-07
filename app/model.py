@@ -17,7 +17,7 @@ wandb_api_key = os.environ.get("WANDB_API_KEY")
 
 def download_artifact(is_baseline=False):
     """Download model artifacts from WandB
-    
+
     Args:
         is_baseline (bool): If True, downloads baseline model using BASE_* env vars
     """
@@ -33,10 +33,10 @@ def download_artifact(is_baseline=False):
         wandb_project = os.environ.get("BASE_WANDB_PROJECT", "")
         wandb_model_name = os.environ.get("BASE_WANDB_MODEL_NAME", "baseline-resnet18")
         wandb_model_version = os.environ.get("BASE_WANDB_MODEL_VERSION", "latest")
-        
+
         if not wandb_project:
             raise ValueError("BASE_WANDB_PROJECT environment variable is required")
-        
+
         model_type = "baseline"
     else:
         # Use regular environment variables for main model
@@ -44,10 +44,10 @@ def download_artifact(is_baseline=False):
         wandb_project = os.environ.get("WANDB_PROJECT", "")
         wandb_model_name = os.environ.get("WANDB_MODEL_NAME")
         wandb_model_version = os.environ.get("WANDB_MODEL_VERSION", "latest")
-        
+
         if not wandb_model_name:
             raise ValueError("WANDB_MODEL_NAME environment variable is required")
-        
+
         model_type = "main"
 
     artifact_path = (
@@ -85,7 +85,9 @@ def load_model() -> ResNet:
     model_state_dict_path = Path(MODELS_DIR) / MODEL_FILENAME
 
     # this loads the weights from the file into a state_dictionary in memory
-    model_state_dict = torch.load(model_state_dict_path, map_location="cpu", weights_only=False)
+    model_state_dict = torch.load(
+        model_state_dict_path, map_location="cpu", weights_only=False
+    )
 
     # This merges the weights into the model arch.
     model.load_state_dict(model_state_dict, strict=True)
@@ -114,21 +116,22 @@ def load_transforms() -> transforms.Compose:
         ]
     )
 
+
 def load_basemodel():
     """Load baseline ResNet18 model with ImageNet weights from WandB"""
     try:
         baseline_path = Path(MODELS_DIR) / BASE_MODEL_FILENAME
-        
+
         # Download only if file doesn't exist
         if not baseline_path.exists():
             print("📥 Downloading baseline artifact from WandB...")
             download_baseline_artifact()
         else:
             print(f"📂 Using existing baseline model: {baseline_path}")
-        
+
         # Load from file - could be full model or state dict
         loaded_data = torch.load(baseline_path, map_location="cpu", weights_only=False)
-        
+
         # Check if it's a full model or just state dict
         if isinstance(loaded_data, torch.nn.Module):
             # It's a full model
@@ -139,7 +142,7 @@ def load_basemodel():
             model = resnet18(weights=None)  # Initialize without weights
             model.load_state_dict(loaded_data, strict=True)
             print("📊 Loaded baseline model from state dict")
-            
+
         model.eval()
         print("✅ Baseline model set to Eval Mode.")
         return model
@@ -165,7 +168,7 @@ def get_transforms() -> transforms.Compose:
         ml_models["transforms"] = load_transforms()
     return ml_models["transforms"]
 
+
 def get_base_model():
     """Get baseline model from cache, returns None if not available"""
     return ml_models.get("base_model", None)
-
