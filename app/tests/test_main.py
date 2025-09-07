@@ -85,13 +85,38 @@ def test_welcome_endpoint():
 
 
 def test_health_endpoint():
-    """Test /health endpoint returns status"""
+    """Test /health endpoint returns status and component info"""
     response = client.get("/health")
 
     assert response.status_code == 200
     data = response.json()
-    assert data["status"] == "healthy"
-    assert data["categories_count"] == 6
+
+    # Should return either healthy or degraded
+    assert data["status"] in ["healthy", "degraded"]
+    assert "timestamp" in data
+    assert "components" in data
+    assert "endpoints" in data
+
+    # Check component structure
+    components = data["components"]
+    expected_components = [
+        "models_loaded",
+        "transforms_loaded",
+        "baseline_model_loaded",
+        "api_keys_configured",
+        "categories_available",
+        "imagenet_categories_loaded",
+    ]
+    for component in expected_components:
+        assert component in components
+        assert isinstance(components[component], bool)
+
+    # Check endpoints structure
+    endpoints = data["endpoints"]
+    expected_endpoints = ["predict", "categories", "welcome", "docs"]
+    for endpoint in expected_endpoints:
+        assert endpoint in endpoints
+        assert isinstance(endpoints[endpoint], bool)
 
 
 def test_categories_endpoint_without_api_key():

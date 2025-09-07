@@ -260,10 +260,58 @@ async def protected_route(api_key: str = Depends(verify_api_key)):
     return {"categories": CATEGORIES, "total": len(CATEGORIES)}
 
 
+def check_endpoint_health():
+    """Check health of critical system components"""
+    health_status = {
+        "models_loaded": False,
+        "transforms_loaded": False,
+        "baseline_model_loaded": False,
+        "api_keys_configured": False,
+        "categories_available": False,
+        "imagenet_categories_loaded": False,
+    }
+
+    try:
+        # Check if models are in cache
+        health_status["models_loaded"] = (
+            "classifier" in ml_models and ml_models["classifier"] is not None
+        )
+        health_status["transforms_loaded"] = (
+            "transforms" in ml_models and ml_models["transforms"] is not None
+        )
+        health_status["baseline_model_loaded"] = (
+            "base_model" in ml_models and ml_models["base_model"] is not None
+        )
+
+        # Check API configuration
+        health_status["api_keys_configured"] = len(VALID_API_KEYS) > 0
+        health_status["categories_available"] = len(CATEGORIES) > 0
+        health_status["imagenet_categories_loaded"] = len(IMAGENET_CATEGORIES) > 0
+
+    except Exception as e:
+        print(f"Health check error: {e}")
+
+    return health_status
+
+
 @app.get("/health")
 def health_check():
+    endpoint_health = check_endpoint_health()
+
+    # Determine overall status
+    critical_checks = ["models_loaded", "transforms_loaded", "categories_available"]
+    all_critical_healthy = all(endpoint_health[check] for check in critical_checks)
+
+    status = "healthy" if all_critical_healthy else "degraded"
+
     return {
-        "status": "healthy",
-        "api_keys_loaded": len(VALID_API_KEYS) > 0,
-        "categories_count": len(CATEGORIES),
+        "status": status,
+        "timestamp": datetime.datetime.now().isoformat(),
+        "components": endpoint_health,
+        "endpoints": {
+            "predict": all_critical_healthy,
+            "categories": endpoint_health["api_keys_configured"],
+            "welcome": True,
+            "docs": True,
+        },
     }
