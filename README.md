@@ -20,6 +20,9 @@ pip install -r requirements.txt
   API_KEYS=key1,key2,key3
   ENVIRONMENT=development
   
+  # Optional: Rate limiting (default: 2 requests per minute)
+  RATELIMIT_PER_MIN=2
+  
   # Optional: Baseline model for comparison
   BASE_WANDB_ORG=your-org
   BASE_WANDB_PROJECT=your-baseline-project
