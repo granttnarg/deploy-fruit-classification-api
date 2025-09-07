@@ -35,6 +35,16 @@ def mock_wandb():
     ), patch(
         "app.model.load_transforms", return_value=mock_load_transforms()
     ), patch(
+        "app.model.get_model", return_value=mock_load_model()
+    ), patch(
+        "app.model.get_transforms", return_value=mock_load_transforms()
+    ), patch(
+        "app.model.load_basemodel", return_value=mock_load_model()
+    ), patch(
+        "app.main.load_imagenet_classes", return_value=["class1", "class2", "class3"]
+    ), patch(
+        "torchvision.models.resnet18", return_value=mock_load_model()
+    ), patch(
         "torch.load", return_value={}
     ) as mock_torch_load, patch(
         "app.model.get_raw_model", return_value=mock_load_model()
@@ -75,13 +85,38 @@ def test_welcome_endpoint():
 
 
 def test_health_endpoint():
-    """Test /health endpoint returns status"""
+    """Test /health endpoint returns status and component info"""
     response = client.get("/health")
 
     assert response.status_code == 200
     data = response.json()
-    assert data["status"] == "healthy"
-    assert data["categories_count"] == 6
+
+    # Should return either healthy or degraded
+    assert data["status"] in ["healthy", "degraded"]
+    assert "timestamp" in data
+    assert "components" in data
+    assert "endpoints" in data
+
+    # Check component structure
+    components = data["components"]
+    expected_components = [
+        "models_loaded",
+        "transforms_loaded",
+        "baseline_model_loaded",
+        "api_keys_configured",
+        "categories_available",
+        "imagenet_categories_loaded",
+    ]
+    for component in expected_components:
+        assert component in components
+        assert isinstance(components[component], bool)
+
+    # Check endpoints structure
+    endpoints = data["endpoints"]
+    expected_endpoints = ["predict", "categories", "welcome", "docs"]
+    for endpoint in expected_endpoints:
+        assert endpoint in endpoints
+        assert isinstance(endpoints[endpoint], bool)
 
 
 def test_categories_endpoint_without_api_key():

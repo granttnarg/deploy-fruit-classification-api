@@ -1,6 +1,8 @@
 # FastAPI Fruit Classifier - ResNet 18 ML
 
-A production-ready ML API that classifies fresh vs rotten fruits (apples, bananas, oranges) using a fine-tuned ResNet-18 model. The API is built with FastAPI and includes rate limiting, authentication, and comprehensive documentation.
+A production-ready ML API that classifies fresh vs rotten fruits (apples, bananas, oranges) using a fine-tuned ResNet-18 model. The API is built with FastAPI and includes rate limiting, authentication, and comprehensive documentation. 
+
+This project demonstrates containerized ML deployment using Docker and is designed for easy deployment to cloud platforms like Google Cloud Run, showcasing modern MLOps practices for serving PyTorch models at scale.
 
 ## Setup
 
@@ -19,6 +21,14 @@ pip install -r requirements.txt
   WANDB_MODEL_NAME=your-model-name
   API_KEYS=key1,key2,key3
   ENVIRONMENT=development
+  
+  # Optional: Rate limiting (default: 2 requests per minute)
+  RATELIMIT_PER_MIN=2
+  
+  # Optional: Baseline model for comparison
+  BASE_WANDB_ORG=your-org
+  BASE_WANDB_PROJECT=your-baseline-project
+  BASE_WANDB_MODEL_NAME=baseline-resnet18
 ```
 
 3. Run the app:
@@ -30,6 +40,8 @@ fastapi run app/main.py --port 8080 --reload
 ## Features
 
 - **Machine Learning**: ResNet-18 based fruit classification model
+- **Model Caching**: Smart in-memory caching to avoid reloading models between requests
+- **Baseline Comparison**: Optional baseline model support for performance comparison
 - **Rate Limiting**: 2 requests per minute per IP for prediction endpoint
 - **Authentication**: API key-based authentication for protected endpoints
 - **Model Management**: Automatic model download from Weights & Biases
@@ -122,6 +134,10 @@ The API includes comprehensive prediction logging that adapts to the deployment 
 - **Google Cloud Run**: Logs only to stdout for Cloud Logging integration (auto-detected via `K_SERVICE` env var)
 - **Log Content**: Prediction results, confidence scores, timing data, image metadata, and quality flags for low-confidence predictions
 
+## Model Training
+
+The `notebooks/` directory contains the complete training pipeline showing how the ResNet-18 model was fine-tuned on the fruit dataset. The notebook demonstrates transfer learning, WandB experiment tracking, and saves both the fine-tuned model and baseline model artifacts that the API uses.
+
 ## Development
 
 ### Project Structure
@@ -131,11 +147,16 @@ app/
 ├── __init__.py
 ├── main.py         # FastAPI application and endpoints
 ├── model.py        # ML model loading and preprocessing
+├── cache.py        # In-memory model caching system
 ├── logger.py       # Prediction logging with cloud adaptation
 └── tests/          # Test suite
     ├── test_main.py     # API endpoint tests
     ├── test_model.py    # Model architecture tests
+    ├── test_cache.py    # Caching functionality tests
     └── test_logging.py  # Logging functionality tests
+
+notebooks/          # Training pipeline and experimentation
+└── scratchpadforfruitclassifer-set-2025.ipynb  # Complete model training workflow
 
 requirements.txt    # Python dependencies
 Dockerfile         # Container configuration

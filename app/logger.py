@@ -79,6 +79,24 @@ def log_prediction(
 
             try:
                 result = await func(*args, **kwargs)
+
+                # Get request from kwargs to access state
+                request = None
+                for arg in args:
+                    if hasattr(arg, "state"):
+                        request = arg
+                        break
+                if not request:
+                    for value in kwargs.values():
+                        if hasattr(value, "state"):
+                            request = value
+                            break
+
+                # Extract base model info from request state
+                base_info = (
+                    getattr(request.state, "base_model_info", None) if request else None
+                )
+
                 end_time = datetime.datetime.now()
                 total_time = (end_time - start_time).total_seconds()
 
@@ -86,11 +104,22 @@ def log_prediction(
                     "prediction_id": prediction_id,
                     "timestamp": start_time.isoformat(),
                     "total_time_seconds": round(total_time, 4),
-                    "prediction": {
+                    "main_model": {
                         "category": result.category,
                         "confidence": round(result.confidence, 4),
                     },
+                    "baseline_model": base_info if base_info else None,
                 }
+
+                # Add comparison metrics if both models available
+                if base_info:
+                    prediction_log["comparison"] = {
+                        "base_line_category": base_info["category"],
+                        "categories_match": result.category == base_info["category"],
+                        "confidence_difference": round(
+                            abs(result.confidence - base_info["confidence"]), 4
+                        ),
+                    }
 
                 # Add accurate inference timing if available
                 if track_inference_time and hasattr(result, "inference_time"):
