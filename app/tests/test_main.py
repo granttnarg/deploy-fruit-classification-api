@@ -49,7 +49,8 @@ def test_categories_endpoint_with_valid_api_key():
     # Mock valid API keys
     with patch.dict(os.environ, {"API_KEYS": "test-key-123"}, clear=True):
         from ..main import load_api_keys
-        with patch('app.main.VALID_API_KEYS', load_api_keys()):
+
+        with patch("app.main.VALID_API_KEYS", load_api_keys()):
             response = client.get("/categories", headers={"X-API-Key": "test-key-123"})
 
     print(f"Categories with valid key: {response.status_code}")

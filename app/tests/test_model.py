@@ -39,7 +39,7 @@ def test_load_transforms():
 
     # Check specific transforms
     transform_names = [type(t).__name__ for t in transforms_list]
-    expected = ['Resize', 'CenterCrop', 'ToImage', 'ToDtype', 'Normalize']
+    expected = ["Resize", "CenterCrop", "ToImage", "ToDtype", "Normalize"]
 
     for expected_transform in expected:
         assert expected_transform in transform_names
@@ -71,8 +71,11 @@ def test_transforms_output_shape():
     """Test that transforms produce correct tensor shape"""
     from PIL import Image
     import numpy as np
+
     # Create fake RGB image
-    fake_image = Image.fromarray(np.random.randint(0, 255, (300, 300, 3), dtype=np.uint8))
+    fake_image = Image.fromarray(
+        np.random.randint(0, 255, (300, 300, 3), dtype=np.uint8)
+    )
     transform = load_transforms()
     transformed = transform(fake_image)
 

@@ -68,7 +68,7 @@ def test_prediction_logging_levels():
     has_warning = "WARNING" in log_output
 
     print(f"High confidence result: {result1.confidence}")
-    print(f"Low confidence result: {result2.confidence}") 
+    print(f"Low confidence result: {result2.confidence}")
     print(f"Has INFO level: {has_info}")
     print(f"Has WARNING level: {has_warning}")
 
