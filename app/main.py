@@ -34,6 +34,7 @@ class Result(BaseModel):
 async def lifespan(app: FastAPI):
     # Load model and transforsm on startup
     try:
+        # Our finetuned model is added to cache
         ml_models["classifier"] = load_model()
         ml_models["transforms"] = load_transforms()
 
@@ -55,7 +56,7 @@ async def lifespan(app: FastAPI):
     ml_models.clear()
 
 
-# Create FastAPI instance
+# Create FastAPI instance with lifespan setup for cache
 app = FastAPI(
     title="Fruit Classifier API",
     description="A machine learning API for classifying fresh and rotten fruits using PyTorch ResNet",
@@ -84,11 +85,9 @@ CATEGORIES = [
 def load_imagenet_classes():
     """Load ImageNet class names from torchvision or online source"""
     try:
-        # Option A: If you have torchvision
         from torchvision.models import ResNet18_Weights
         return ResNet18_Weights.IMAGENET1K_V1.meta["categories"]
     except:
-        # Option B: Load from online JSON (fallback)
         url = "https://raw.githubusercontent.com/anishathalye/imagenet-simple-labels/master/imagenet-simple-labels.json"
         response = requests.get(url)
         return response.json()
@@ -96,11 +95,57 @@ def load_imagenet_classes():
 # Load ImageNet categories at module level
 IMAGENET_CATEGORIES = load_imagenet_classes()
 
+
+def perform_inference(image_tensor: torch.Tensor, main_model: ResNet, base_model: ResNet):
+    """
+    Perform inference on both main and base models
+    
+    Args:
+        image_tensor: Preprocessed image tensor (1, 3, 224, 224)
+        main_model: Fine-tuned fruit classification model
+        base_model: Baseline ImageNet model
+        
+    Returns:
+        dict: Contains results for both models and timing info
+    """
+    main_model.eval()
+    base_model.eval()
+    
+    inference_start = datetime.datetime.now()
+    
+    with torch.inference_mode():
+        # Run inference on both models
+        main_outputs = main_model(image_tensor)
+        base_outputs = base_model(image_tensor)
+        
+        # Main model results
+        main_confidence = F.softmax(main_outputs, dim=1).max().item()
+        main_category = CATEGORIES[main_outputs.argmax()]
+        
+        # Base model results
+        base_confidence = F.softmax(base_outputs, dim=1).max().item()
+        base_category = IMAGENET_CATEGORIES[base_outputs.argmax()]
+    
+    inference_end = datetime.datetime.now()
+    inference_time = (inference_end - inference_start).total_seconds()
+    
+    return {
+        "main_model": {
+            "category": main_category,
+            "confidence": main_confidence
+        },
+        "base_model": {
+            "category": base_category,
+            "confidence": base_confidence
+        },
+        "inference_time_seconds": inference_time
+    }
+
 # Add basic rate limiter
 limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-RATE_LIMT = os.getenv('RATELIMIT_PER_MIN', '2')
+RATE_LIMIT = os.getenv('RATELIMIT_PER_MIN', '2')
 
 
 @app.get(
@@ -151,7 +196,7 @@ def welcome():
 
 
 @app.post("/predict", response_model=Result)
-@limiter.limit(f'{RATE_LIMT}/minute')
+@limiter.limit(f'{RATE_LIMIT}/minute')
 @log_prediction()
 async def predict(
     request: Request,
@@ -160,48 +205,26 @@ async def predict(
     base_model: ResNet = Depends(get_base_model),
     transforms: transforms.Compose = Depends(get_transforms),
 ) -> Result:
+    # Handle image upload and preprocessing
     image = Image.open(io.BytesIO(await input_image.read()))
 
-    # Here we delete the alpha channel, the model doesn't use it
-    # and will complain if the input has it
+    # Convert to RGB (remove alpha channel if present)
     if image.mode != "RGB":
         image = image.convert("RGB")
 
-    # Here we add a batch dimension of 1
-    image = transforms(image).reshape(1, 3, 224, 224)
+    # Apply transforms and add batch dimension
+    image_tensor = transforms(image).reshape(1, 3, 224, 224)
 
-    model.eval() # We turn off dropout and uses batch stats from training
-    base_model.eval()
+    # Perform inference on both models
+    results = perform_inference(image_tensor, model, base_model)
 
-    # This is inference mode, we don't need gradient tracking
-    inference_start = datetime.datetime.now()
-
-    with torch.inference_mode():
-        # Run inference on both models
-        outputs = model(image)
-        base_outputs = base_model(image)
-
-        # Main model results (for response)
-        confidence = F.softmax(outputs, dim=1).max().item()
-        category = CATEGORIES[outputs.argmax()]
-
-        # Base model results (for logging)
-        base_confidence = F.softmax(base_outputs, dim=1).max().item()
-        base_category = IMAGENET_CATEGORIES[base_outputs.argmax()]
-
-    inference_end = datetime.datetime.now()
-    inference_time = (inference_end - inference_start).total_seconds()
-
-    # Store base model info in request state for decorator access
-    request.state.base_model_info = {
-        "category": base_category,
-        "confidence": base_confidence
-    }
+    # Store base model info in request state for logging decorator
+    request.state.base_model_info = results["base_model"]
 
     return Result(
-        category=category,
-        confidence=confidence,
-        inference_time_seconds=inference_time
+        category=results["main_model"]["category"],
+        confidence=results["main_model"]["confidence"],
+        inference_time_seconds=results["inference_time_seconds"]
     )
 
 
