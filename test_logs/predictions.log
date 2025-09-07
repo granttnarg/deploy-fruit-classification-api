@@ -1,0 +1,2 @@
+2025-09-07 20:06:28 - INFO - PREDICTION: {"prediction_id": "34fdf2e5-2e3c-49ed-99f6-3ef45344980d", "timestamp": "2025-09-07T20:06:28.768981", "total_time_seconds": 0.0, "prediction": {"category": "freshapple", "confidence": 0.95}}
+2025-09-07 20:06:28 - WARNING - PREDICTION: {"prediction_id": "885e50d3-5960-4284-b343-6adefe8c56c5", "timestamp": "2025-09-07T20:06:28.769309", "total_time_seconds": 0.0, "prediction": {"category": "rottenbanana", "confidence": 0.3}, "quality_flags": ["low_confidence"]}
