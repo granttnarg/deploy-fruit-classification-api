@@ -1,22 +1,38 @@
 import os
 from fastapi.testclient import TestClient
 from unittest.mock import patch
-from ..main import app
 import pytest
 import torch
 from unittest.mock import patch, MagicMock
 
-# Create test client
-client = TestClient(app)
+
+def mock_load_model():
+    """Mock model that returns fake predictions"""
+    mock_model = MagicMock()
+    mock_model.eval.return_value = None
+    mock_output = torch.tensor([[0.1, 0.9, 0.05, 0.2, 0.3, 0.15]])
+    mock_model.return_value = mock_output
+    mock_model.__call__ = MagicMock(return_value=mock_output)
+    return mock_model
+
+
+def mock_load_transforms():
+    """Mock transforms"""
+    mock_transform = MagicMock()
+    mock_transform.return_value = torch.randn(3, 224, 224)
+    return mock_transform
 
 
 @pytest.fixture(autouse=True)
 def mock_wandb():
+    # Mock all the model-related imports and functions before the app is imported
     with patch("wandb.login") as mock_login, patch("wandb.Api") as mock_api, patch(
         "app.model.download_artifact"
-    ) as mock_download, patch("app.model.load_model") as mock_load_model, patch(
-        "app.model.load_transforms"
-    ) as mock_load_transforms:
+    ) as mock_download, patch(
+        "app.model.load_model", side_effect=mock_load_model
+    ), patch(
+        "app.model.load_transforms", side_effect=mock_load_transforms
+    ):
 
         mock_download.return_value = None
 
@@ -29,19 +45,14 @@ def mock_wandb():
         mock_artifact.download.return_value = "path/to/fake/model"
         mock_api_instance.artifact.return_value = mock_artifact
 
-        # Mock the model
-        mock_model = MagicMock()
-        mock_model.eval.return_value = None
-        mock_output = torch.tensor([[0.1, 0.9, 0.05, 0.2, 0.3, 0.15]])
-        mock_model.return_value = mock_output
-        mock_load_model.return_value = mock_model
-
-        # Mock the transforms
-        mock_transform = MagicMock()
-        mock_transform.return_value = torch.randn(3, 224, 224)
-        mock_load_transforms.return_value = mock_transform
-
         yield
+
+
+# Import app AFTER mocks are set up
+from ..main import app
+
+# Create test client
+client = TestClient(app)
 
 
 def test_welcome_endpoint():
