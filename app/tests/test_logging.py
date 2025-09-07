@@ -7,6 +7,7 @@ import io
 
 original_k_service = os.environ.pop("K_SERVICE", None)
 
+
 def test_local_vs_cloud_logging():
     """Test that logger behaves differently in local vs cloud environments"""
     # Test local environment
@@ -19,6 +20,7 @@ def test_local_vs_cloud_logging():
         cloud_logger = setup_prediction_logging()
         print(f"Cloud handlers: {len(cloud_logger.handlers)} (should be 1)")
 
+
 def test_prediction_logging_levels():
     """Test that high and low confidence predictions use correct log levels"""
     # Create string stream to capture logs
@@ -26,7 +28,7 @@ def test_prediction_logging_levels():
     handler = logging.StreamHandler(log_capture)
 
     # Set formatter to include log level
-    formatter = logging.Formatter('%(levelname)s - %(message)s')
+    formatter = logging.Formatter("%(levelname)s - %(message)s")
     handler.setFormatter(formatter)
 
     # Get the prediction logger and replace its handlers temporarily
@@ -86,6 +88,7 @@ def test_prediction_logging_levels():
         # Restore original handlers
         pred_logger.handlers.clear()
         pred_logger.handlers.extend(original_handlers)
+
 
 if __name__ == "__main__":
     print("Testing logging setup...")

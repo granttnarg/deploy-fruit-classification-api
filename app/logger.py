@@ -9,6 +9,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
+
 def setup_prediction_logging(log_file: str = "logs/predictions.log"):
     """Setup logging for predictions - adapts to environment (local vs cloud)"""
 

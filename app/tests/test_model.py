@@ -6,10 +6,10 @@ from ..model import get_raw_model, load_transforms
 import pytest
 from unittest.mock import patch, MagicMock
 
+
 @pytest.fixture(autouse=True)
 def mock_wandb():
-    with patch('wandb.login') as mock_login, \
-         patch('wandb.Api') as mock_api:
+    with patch("wandb.login") as mock_login, patch("wandb.Api") as mock_api:
 
         # Make Api() return a mock object with artifact method
         mock_api_instance = MagicMock()
@@ -21,6 +21,7 @@ def mock_wandb():
         mock_api_instance.artifact.return_value = mock_artifact
 
         yield
+
 
 def test_get_raw_model():
     """Test that raw model returns correct architecture"""
