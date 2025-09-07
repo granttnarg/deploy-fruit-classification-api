@@ -2,9 +2,30 @@ import os
 from fastapi.testclient import TestClient
 from unittest.mock import patch
 from ..main import app
+import pytest
+from unittest.mock import patch, MagicMock
 
 # Create test client
 client = TestClient(app)
+
+@pytest.fixture(autouse=True)
+def mock_wandb():
+    with patch("wandb.login") as mock_login, \
+         patch("wandb.Api") as mock_api, \
+         patch("app.model.download_artifact") as mock_download:  # Mock the entire function
+
+        mock_download.return_value = None  # or whatever it should return
+
+        # Make Api() return a mock object with artifact method
+        mock_api_instance = MagicMock()
+        mock_api.return_value = mock_api_instance
+
+        # Mock the artifact and its download method
+        mock_artifact = MagicMock()
+        mock_artifact.download.return_value = "path/to/fake/model"
+        mock_api_instance.artifact.return_value = mock_artifact
+
+        yield
 
 
 def test_welcome_endpoint():
