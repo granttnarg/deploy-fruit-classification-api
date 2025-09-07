@@ -1,7 +1,7 @@
 import os
 import asyncio
 from unittest.mock import patch, MagicMock
-from app.logger import setup_prediction_logging, log_prediction
+from ..logger import setup_prediction_logging, log_prediction
 
 
 def test_local_vs_cloud_logging():

@@ -1,7 +1,7 @@
 import torch
 from torchvision.models import ResNet
 from torchvision.transforms import v2 as transforms
-from app.model import get_raw_model, load_transforms
+from ..model import get_raw_model, load_transforms
 
 
 def test_get_raw_model():

@@ -1,7 +1,7 @@
 import os
 from fastapi.testclient import TestClient
 from unittest.mock import patch
-from app.main import app
+from ..main import app
 
 # Create test client
 client = TestClient(app)
@@ -48,7 +48,7 @@ def test_categories_endpoint_with_valid_api_key():
     """Test /categories endpoint with valid API key"""
     # Mock valid API keys
     with patch.dict(os.environ, {"API_KEYS": "test-key-123"}, clear=True):
-        from app.main import load_api_keys
+        from ..main import load_api_keys
         with patch('app.main.VALID_API_KEYS', load_api_keys()):
             response = client.get("/categories", headers={"X-API-Key": "test-key-123"})
 
