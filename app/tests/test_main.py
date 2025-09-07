@@ -14,8 +14,8 @@ client = TestClient(app)
 def mock_wandb():
     with patch("wandb.login") as mock_login, patch("wandb.Api") as mock_api, patch(
         "app.model.download_artifact"
-    ) as mock_download, patch("app.model.load_model") as mock_load_model, patch(
-        "app.model.load_transforms"
+    ) as mock_download, patch("app.main.load_model") as mock_load_model, patch(
+        "app.main.load_transforms"
     ) as mock_load_transforms:
 
         mock_download.return_value = None
