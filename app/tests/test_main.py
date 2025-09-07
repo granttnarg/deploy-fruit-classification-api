@@ -13,6 +13,8 @@ def mock_load_model():
     mock_output = torch.tensor([[0.1, 0.9, 0.05, 0.2, 0.3, 0.15]])
     mock_model.return_value = mock_output
     mock_model.__call__ = MagicMock(return_value=mock_output)
+    # Mock argmax to return a valid category index (0-5)
+    mock_model.return_value.argmax = MagicMock(return_value=1)
     return mock_model
 
 
@@ -29,9 +31,13 @@ def mock_wandb():
     with patch("wandb.login") as mock_login, patch("wandb.Api") as mock_api, patch(
         "app.model.download_artifact"
     ) as mock_download, patch(
-        "app.model.load_model", side_effect=mock_load_model
+        "app.model.load_model", return_value=mock_load_model()
     ), patch(
-        "app.model.load_transforms", side_effect=mock_load_transforms
+        "app.model.load_transforms", return_value=mock_load_transforms()
+    ), patch(
+        "torch.load", return_value={}
+    ) as mock_torch_load, patch(
+        "app.model.get_raw_model", return_value=mock_load_model()
     ):
 
         mock_download.return_value = None
