@@ -39,6 +39,12 @@ def mock_wandb():
     ), patch(
         "app.model.get_transforms", return_value=mock_load_transforms()
     ), patch(
+        "app.model.load_basemodel", return_value=mock_load_model()
+    ), patch(
+        "app.main.load_imagenet_classes", return_value=["class1", "class2", "class3"]
+    ), patch(
+        "torchvision.models.resnet18", return_value=mock_load_model()
+    ), patch(
         "torch.load", return_value={}
     ) as mock_torch_load, patch(
         "app.model.get_raw_model", return_value=mock_load_model()
