@@ -12,10 +12,6 @@ MODEL_FILENAME = 'best_model.pth'
 os.makedirs(MODELS_DIR, exist_ok=True)
 wandb_api_key = os.environ.get("WANDB_API_KEY")
 
-if os.getenv("ENVIRONMENT") == "development":
-    from dotenv import load_dotenv
-    load_dotenv()
-
 def download_artifact():
     """Download the weights from our model from weights and biases """
     assert 'WANDB_API_KEY' in os.environ, "WANDB_API_KEY not found in environment Variables"

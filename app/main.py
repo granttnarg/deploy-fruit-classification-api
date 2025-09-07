@@ -16,11 +16,16 @@ from PIL import Image
 import torch.nn.functional as F
 from dotenv import load_dotenv
 from .model import load_model, load_transforms
+import logging
+import datetime
+from dotenv import load_dotenv
+from app.logger import log_prediction
 
 # This is data model that describes the ouput of the API
 class Result(BaseModel):
     category: str
     confidence: float
+    inference_time_seconds: float
 
 # Create FastAPI instance
 app = FastAPI(
@@ -30,6 +35,13 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc"
 )
+
+# Load env file in development only
+if os.getenv("ENVIRONMENT") != "production":
+    try:
+        load_dotenv()
+    except ImportError:
+        pass
 
 CATEGORIES = ["freshapple", "freshbanana", "freshorange",
               "rottenapple", "rottenbanana", "rottenorange"]
@@ -85,7 +97,8 @@ def welcome():
     }
 
 @app.post('/predict', response_model=Result)
-@limiter.limit("2/minute") 
+@limiter.limit("2/minute")
+@log_prediction()
 async def predict(
         request: Request,
         input_image: UploadFile = File(...),
@@ -106,12 +119,16 @@ async def predict(
     model.eval() # We turn off dropout and uses batch stats from training
 
     # This is inference mode, we don't need gradient tracking
+    inference_start = datetime.datetime.now()
     with torch.inference_mode(): # The newer version of no_grad
         outputs = model(image)
         confidence = F.softmax(outputs, dim=1).max().item() # dim -> batch, output_categories
         category = CATEGORIES[outputs.argmax()]
+    inference_end = datetime.datetime.now()
 
-    return Result(category=category, confidence=confidence)
+    inference_time = (inference_end - inference_start).total_seconds()
+
+    return Result(category=category, confidence=confidence, inference_time_seconds=inference_time)
 
 def load_api_keys():
     """Load API keys from environment variables"""
