@@ -19,6 +19,11 @@ pip install -r requirements.txt
   WANDB_MODEL_NAME=your-model-name
   API_KEYS=key1,key2,key3
   ENVIRONMENT=development
+  
+  # Optional: Baseline model for comparison
+  BASE_WANDB_ORG=your-org
+  BASE_WANDB_PROJECT=your-baseline-project
+  BASE_WANDB_MODEL_NAME=baseline-resnet18
 ```
 
 3. Run the app:
@@ -30,6 +35,8 @@ fastapi run app/main.py --port 8080 --reload
 ## Features
 
 - **Machine Learning**: ResNet-18 based fruit classification model
+- **Model Caching**: Smart in-memory caching to avoid reloading models between requests
+- **Baseline Comparison**: Optional baseline model support for performance comparison
 - **Rate Limiting**: 2 requests per minute per IP for prediction endpoint
 - **Authentication**: API key-based authentication for protected endpoints
 - **Model Management**: Automatic model download from Weights & Biases
@@ -131,10 +138,12 @@ app/
 ├── __init__.py
 ├── main.py         # FastAPI application and endpoints
 ├── model.py        # ML model loading and preprocessing
+├── cache.py        # In-memory model caching system
 ├── logger.py       # Prediction logging with cloud adaptation
 └── tests/          # Test suite
     ├── test_main.py     # API endpoint tests
     ├── test_model.py    # Model architecture tests
+    ├── test_cache.py    # Caching functionality tests
     └── test_logging.py  # Logging functionality tests
 
 requirements.txt    # Python dependencies
