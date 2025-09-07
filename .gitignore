@@ -1,4 +1,6 @@
 .venv
 .env
 app/__pycache__/
+core/__pycache__/
 *.pyc
+logs/

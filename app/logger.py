@@ -3,6 +3,7 @@ import json
 import sys
 import datetime
 import functools
+import os
 from typing import Callable
 import logging
 from logging.handlers import RotatingFileHandler
@@ -10,38 +11,48 @@ from pathlib import Path
 
 
 def setup_prediction_logging(log_file: str = "logs/predictions.log"):
-    """Setup logging for predictions to both file and stdout"""
-
-    log_path = Path(log_file)
-    log_path.parent.mkdir(parents=True, exist_ok=True)
+    """Setup logging for predictions - adapts to environment (local vs cloud)"""
 
     prediction_logger = logging.getLogger("predictions")
     prediction_logger.setLevel(logging.INFO)
     prediction_logger.handlers.clear()
 
-    # File handler
-    file_handler = RotatingFileHandler(
-        log_file,
-        maxBytes=10 * 1024 * 1024,  # 10MB file max, with backups
-        backupCount=5,
-    )
-    file_handler.setLevel(logging.INFO)
+    is_cloud_run = os.getenv("K_SERVICE") is not None  # Turn of file logging for Cloud deployment, simple format for Google Cloud.
 
-    # Console handler (stdout)
-    console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setLevel(logging.INFO)
+    if is_cloud_run:
+        # Cloud Run: stdout only with simple format for Cloud Logging
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_handler.setLevel(logging.INFO)
+        formatter = logging.Formatter("%(message)s")
+        console_handler.setFormatter(formatter)
+        prediction_logger.addHandler(console_handler)
+    else:
+        # Local development: write to file + stdout
+        log_path = Path(log_file)
+        log_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Formatter for both handlers
-    formatter = logging.Formatter(
-        "%(asctime)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
-    )
+        # File handler
+        file_handler = RotatingFileHandler(
+            log_file,
+            maxBytes=10 * 1024 * 1024,  # 10MB file max, with backups
+            backupCount=5,
+        )
+        file_handler.setLevel(logging.INFO)
 
-    file_handler.setFormatter(formatter)
-    console_handler.setFormatter(formatter)
+        # Console handler (stdout)
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_handler.setLevel(logging.INFO)
 
-    # Add both handlers
-    prediction_logger.addHandler(file_handler)
-    prediction_logger.addHandler(console_handler)
+        formatter = logging.Formatter(
+            "%(asctime)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
+        )
+
+        file_handler.setFormatter(formatter)
+        console_handler.setFormatter(formatter)
+
+        # Add both handlers
+        prediction_logger.addHandler(file_handler)
+        prediction_logger.addHandler(console_handler)
 
     # Keep propagate=False to avoid duplicates from root logger
     prediction_logger.propagate = False
