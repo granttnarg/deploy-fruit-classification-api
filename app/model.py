@@ -6,19 +6,18 @@ from torchvision.transforms import v2 as transforms
 from torch import nn
 from pathlib import Path
 
-MODELS_DIR = '../models'
-MODEL_FILENAME = 'best_model.pth'
+MODELS_DIR = "../models"
+MODEL_FILENAME = "best_model.pth"
 
 os.makedirs(MODELS_DIR, exist_ok=True)
 wandb_api_key = os.environ.get("WANDB_API_KEY")
 
-if os.getenv("ENVIRONMENT") == "development":
-    from dotenv import load_dotenv
-    load_dotenv()
 
 def download_artifact():
-    """Download the weights from our model from weights and biases """
-    assert 'WANDB_API_KEY' in os.environ, "WANDB_API_KEY not found in environment Variables"
+    """Download the weights from our model from weights and biases"""
+    assert (
+        "WANDB_API_KEY" in os.environ
+    ), "WANDB_API_KEY not found in environment Variables"
     wandb.login(key=wandb_api_key)
     api = wandb.Api()
 
@@ -30,28 +29,26 @@ def download_artifact():
     if not wandb_model_name:
         raise ValueError("WANDB_MODEL_NAME environment variable is required")
 
-    artifact_path = f'{wandb_org}/{wandb_project}/{wandb_model_name}:{wandb_model_version}'
+    artifact_path = (
+        f"{wandb_org}/{wandb_project}/{wandb_model_name}:{wandb_model_version}"
+    )
     print(f"Artifact path: {artifact_path}")
 
-
     print(f"Downloading artifact {artifact_path} to {MODELS_DIR}")
-    artifact = wandb.Api().artifact(artifact_path, type='model')
+    artifact = wandb.Api().artifact(artifact_path, type="model")
     artifact.download(root=MODELS_DIR)
 
-def get_raw_model() -> ResNet:
 
+def get_raw_model() -> ResNet:
     """Get tthe architexture ofr the model (random weights) - this must much the architexture during training"""
     # Uses random weights to initialize
     architecture = resnet18(weights=None)
 
     # Change the model architecture to the one that we are actually using
-    architecture.fc = nn.Sequential(
-        nn.Linear(512, 512),
-        nn.ReLU(),
-        nn.Linear(512, 6)
-    )
+    architecture.fc = nn.Sequential(nn.Linear(512, 512), nn.ReLU(), nn.Linear(512, 6))
 
     return architecture
+
 
 def load_model() -> ResNet:
     """Loads the model  with its wandb trained weights weights"""
@@ -62,15 +59,16 @@ def load_model() -> ResNet:
     model_state_dict_path = Path(MODELS_DIR) / MODEL_FILENAME
 
     # this loads the weights from the file into a state_dictionary in memory
-    model_state_dict = torch.load(model_state_dict_path, map_location='cpu')
+    model_state_dict = torch.load(model_state_dict_path, map_location="cpu")
 
     # This merges the weights into the model arch.
     model.load_state_dict(model_state_dict, strict=True)
 
     # Turn off BatchNorm and Dropout, uses the stats from training instead of stats from the inference set.
     model.eval()
-    print('Model loaded and set to Eval Mode.')
+    print("Model loaded and set to Eval Mode.")
     return model
+
 
 def load_transforms() -> transforms.Compose:
     weights = ResNet18_Weights.IMAGENET1K_V1
@@ -80,12 +78,15 @@ def load_transforms() -> transforms.Compose:
     print(transform)
 
     # Lets manually redefine the transforms we need
-    return transforms.Compose([
-        transforms.Resize(256),
-        transforms.CenterCrop(224),
-        transforms.ToImage(),
-        transforms.ToDtype(torch.float32, scale=True),
-        transforms.Normalize([0.485, 0.456, 0.406],
-                             [0.229, 0.224, 0.225])
-    ])
+    return transforms.Compose(
+        [
+            transforms.Resize(256),
+            transforms.CenterCrop(224),
+            transforms.ToImage(),
+            transforms.ToDtype(torch.float32, scale=True),
+            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+        ]
+    )
+
+
 load_transforms()

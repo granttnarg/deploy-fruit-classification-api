@@ -4,5 +4,7 @@ torch==2.8.0
 torchvision==0.23.0
 loadotenv==1.0.1
 slowapi
+black
+pytest
 
 

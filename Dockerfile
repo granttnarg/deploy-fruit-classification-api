@@ -13,13 +13,15 @@ RUN pip install -r code/requirements.txt
 # Copy the entire project into the working directory
 COPY ./app /code/app
 
-ENV WANDB_API_KEY=""
-ENV API_KEYS=""
-ENV WANDB_ORG=""
-ENV WANDB_PROJECT=""
-ENV WANDB_MODEL_NAME=""
-ENV WANDB_MODEL_VERSION=""
-ENV ENVIRONMENT=""
+# Create logs directory
+RUN mkdir -p /code/logs
+
+# ENV WANDB_API_KEY=""
+# ENV API_KEYS=""
+# ENV WANDB_ORG=""
+# ENV WANDB_PROJECT=""
+# ENV WANDB_MODEL_NAME=""
+# ENV WANDB_MODEL_VERSION=""
 
 # Expose port 8080
 EXPOSE 8080

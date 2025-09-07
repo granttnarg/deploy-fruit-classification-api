@@ -1,0 +1,52 @@
+# .github/workflows/ci.yml
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest black
+
+      - name: Format check
+        run: black --check app/
+
+      - name: Test
+        env:
+          WANDB_API_KEY: "test-api-key"
+        run: pytest app/tests/ -v
+
+      - name: README freshness check
+        run: |
+          # Check if README has been updated when code changes
+          if git diff --name-only origin/main...HEAD | grep -E '\.(py|yml|yaml|txt|dockerfile)$' | grep -v README.md; then
+            if ! git diff --name-only origin/main...HEAD | grep -q README.md; then
+              echo "⚠️  Code files changed but README.md wasn't updated"
+              echo "If README adjustments are needed, please update it"
+              echo "If no update needed, add '[skip readme]' to your commit message for this PR."
+              if [[ "${{ github.event.head_commit.message }}" != *"[skip readme]"* ]]; then
+                exit 1
+              fi
+            fi
+          fi
+          echo "✅ README check passed"
+  docker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t test-app .
