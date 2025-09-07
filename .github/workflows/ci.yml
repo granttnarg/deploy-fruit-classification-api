@@ -24,6 +24,15 @@ jobs:
         run: black --check app/
 
       - name: Test
+        env:
+          WANDB_API_KEY: your-api-key-here
+          API_KEYS: test
+
+          WANDB_ORG: org_name
+          WANDB_PROJECT: mlops_123
+          WANDB_MODEL_NAME: resnet18
+          WANDB_MODEL_VERSION: v2
+          ENVIRONMENT: development
         run: pytest app/tests/ -v
 
       - name: README freshness check
