@@ -8,11 +8,12 @@ from unittest.mock import patch, MagicMock
 # Create test client
 client = TestClient(app)
 
+
 @pytest.fixture(autouse=True)
 def mock_wandb():
-    with patch("wandb.login") as mock_login, \
-         patch("wandb.Api") as mock_api, \
-         patch("app.model.download_artifact") as mock_download:  # Mock the entire function
+    with patch("wandb.login") as mock_login, patch("wandb.Api") as mock_api, patch(
+        "app.model.download_artifact"
+    ) as mock_download:  # Mock the entire function
 
         mock_download.return_value = None  # or whatever it should return
 

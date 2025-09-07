@@ -10,9 +10,9 @@ from unittest.mock import patch, MagicMock
 
 @pytest.fixture(autouse=True)
 def mock_wandb():
-    with patch("wandb.login") as mock_login, \
-         patch("wandb.Api") as mock_api, \
-         patch("app.model.download_artifact") as mock_download:  # Mock the entire function
+    with patch("wandb.login") as mock_login, patch("wandb.Api") as mock_api, patch(
+        "app.model.download_artifact"
+    ) as mock_download:  # Mock the entire function
 
         mock_download.return_value = None  # or whatever it should return
 
@@ -26,6 +26,7 @@ def mock_wandb():
         mock_api_instance.artifact.return_value = mock_artifact
 
         yield
+
 
 def test_get_raw_model():
     """Test that raw model returns correct architecture"""
