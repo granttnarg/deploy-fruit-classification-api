@@ -1,5 +1,7 @@
 # FastAPI Fruit Classifier - ResNet 18 ML
 
+<img src="images/fresh-apple-example.png" alt="Fresh Apple Example" width="300">
+
 A production-ready ML API that classifies fresh vs rotten fruits (apples, bananas, oranges) using a fine-tuned ResNet-18 model. The API is built with FastAPI and includes rate limiting, authentication, and comprehensive documentation. 
 
 This project demonstrates containerized ML deployment using Docker and is designed for easy deployment to cloud platforms like Google Cloud Run, showcasing modern MLOps practices for serving PyTorch models at scale.
@@ -187,10 +189,29 @@ Once running, visit:
 
 ### Health Check Response
 
+The health check provides comprehensive status information about all system components:
+
 ```json
 {
-	"status": "healthy",
-	"api_keys_loaded": true,
-	"categories_count": 6
+  "status": "healthy",
+  "timestamp": "2025-01-15T10:30:00.123456",
+  "components": {
+    "models_loaded": true,
+    "transforms_loaded": true,
+    "baseline_model_loaded": false,
+    "api_keys_configured": true,
+    "categories_available": true,
+    "imagenet_categories_loaded": true
+  },
+  "endpoints": {
+    "predict": true,
+    "categories": true,
+    "welcome": true,
+    "docs": true
+  }
 }
 ```
+
+**Status Values:**
+- `healthy` - All critical components working
+- `degraded` - Some non-critical components failing but core functionality available
