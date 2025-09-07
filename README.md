@@ -132,6 +132,10 @@ The API includes comprehensive prediction logging that adapts to the deployment 
 - **Google Cloud Run**: Logs only to stdout for Cloud Logging integration (auto-detected via `K_SERVICE` env var)
 - **Log Content**: Prediction results, confidence scores, timing data, image metadata, and quality flags for low-confidence predictions
 
+## Model Training
+
+The `notebooks/` directory contains the complete training pipeline showing how the ResNet-18 model was fine-tuned on the fruit dataset. The notebook demonstrates transfer learning, WandB experiment tracking, and saves both the fine-tuned model and baseline model artifacts that the API uses.
+
 ## Development
 
 ### Project Structure
@@ -148,6 +152,9 @@ app/
     ├── test_model.py    # Model architecture tests
     ├── test_cache.py    # Caching functionality tests
     └── test_logging.py  # Logging functionality tests
+
+notebooks/          # Training pipeline and experimentation
+└── scratchpadforfruitclassifer-set-2025.ipynb  # Complete model training workflow
 
 requirements.txt    # Python dependencies
 Dockerfile         # Container configuration
