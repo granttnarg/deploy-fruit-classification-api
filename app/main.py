@@ -202,7 +202,11 @@ def welcome():
     }
 
 
-@app.post("/predict", response_model=Result)
+@app.post(
+        "/predict",
+        summary="ML Classification Prediction",
+        description="Upload an image of fruit to get a classification and confidence level",
+        response_model=Result)
 @limiter.limit(f"{RATE_LIMIT}/minute")
 @log_prediction()
 async def predict(
@@ -294,7 +298,7 @@ def check_endpoint_health():
     return health_status
 
 
-@app.get("/health")
+@app.get("/health", summary="Returns Metrics to show overall health status of the API",)
 def health_check():
     endpoint_health = check_endpoint_health()
 
