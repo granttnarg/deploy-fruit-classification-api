@@ -106,6 +106,22 @@ docker run -p 8080:8080 --env-file .env fruit-classifier-api
 
 Make sure your `.env` file contains all required variables before running the container.
 
+## Testing
+
+Run the test suite with pytest:
+
+```bash
+pytest app/tests/ -v
+```
+
+## Logging
+
+The API includes comprehensive prediction logging that adapts to the deployment environment:
+
+- **Local Development**: Logs to both `logs/predictions.log` file and console with timestamps
+- **Google Cloud Run**: Logs only to stdout for Cloud Logging integration (auto-detected via `K_SERVICE` env var)
+- **Log Content**: Prediction results, confidence scores, timing data, image metadata, and quality flags for low-confidence predictions
+
 ## Development
 
 ### Project Structure
@@ -114,11 +130,17 @@ Make sure your `.env` file contains all required variables before running the co
 app/
 ├── __init__.py
 ├── main.py         # FastAPI application and endpoints
-└── model.py        # ML model loading and preprocessing
+├── model.py        # ML model loading and preprocessing
+├── logger.py       # Prediction logging with cloud adaptation
+└── tests/          # Test suite
+    ├── test_main.py     # API endpoint tests
+    ├── test_model.py    # Model architecture tests
+    └── test_logging.py  # Logging functionality tests
 
 requirements.txt    # Python dependencies
 Dockerfile         # Container configuration
 .env              # Environment variables (not tracked)
+logs/             # Local log files (gitignored)
 ```
 
 ### Rate Limiting
