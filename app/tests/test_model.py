@@ -3,6 +3,24 @@ from torchvision.models import ResNet
 from torchvision.transforms import v2 as transforms
 from ..model import get_raw_model, load_transforms
 
+import pytest
+from unittest.mock import patch, MagicMock
+
+@pytest.fixture(autouse=True)
+def mock_wandb():
+    with patch('wandb.login') as mock_login, \
+         patch('wandb.Api') as mock_api:
+
+        # Make Api() return a mock object with artifact method
+        mock_api_instance = MagicMock()
+        mock_api.return_value = mock_api_instance
+
+        # Mock the artifact and its download method
+        mock_artifact = MagicMock()
+        mock_artifact.download.return_value = "path/to/fake/model"
+        mock_api_instance.artifact.return_value = mock_artifact
+
+        yield
 
 def test_get_raw_model():
     """Test that raw model returns correct architecture"""
