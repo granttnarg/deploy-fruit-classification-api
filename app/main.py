@@ -186,7 +186,7 @@ def root_endpoint(request: Request):
 @app.get(
     "/welcome",
     summary="API Welcome",
-    description="Returns API info for programmatic access, redirects browsers to docs",
+    description="Returns API info for programmatic access.",
 )
 def welcome():
     return {
