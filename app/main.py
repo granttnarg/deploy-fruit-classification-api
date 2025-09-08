@@ -66,7 +66,7 @@ async def lifespan(app: FastAPI):
 # Create FastAPI instance with lifespan setup for cache
 app = FastAPI(
     title="Fruit Classifier API",
-    description="A machine learning API for classifying fresh and rotten fruits using PyTorch ResNet",
+    description="A Simple Machine Learning API for classifying fresh and rotten fruits using a Fine Tuned PyTorch ResNet18 Model.",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
